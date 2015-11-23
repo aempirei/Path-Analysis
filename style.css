@@ -1,0 +1,40 @@
+body {
+	text-align: center;
+	overflow: hidden;
+}
+svg,div {
+	font-size: 10.5pt;
+	text-align: left;
+	display: inline-block;
+	border: 1px solid black;
+	vertical-align: middle;
+	margin: 3px;
+	padding: 0px;
+}
+#dbg {
+	overflow-y: auto;
+}
+#con {
+	border: none;
+	border-top: 1px dashed black;
+}
+#dash {
+	border: 1px dashed black;
+	text-align: right;
+	padding: 5px;
+}
+button {
+	border: 1px solid black;
+	vertical-align: middle;
+	background-color: white;
+	width: 60px;
+	height: 20px;
+	margin: 2px;
+}
+button:disabled {
+		color: #ccc;
+}
+.led {
+	width: 3px;
+	height: 18px;
+}
