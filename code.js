@@ -11,7 +11,7 @@ function initState() {
 		sp:		null,
 		width:		400,
 		height:		300,
-		precision:	4,
+		precision:	6,
 		normal:		256,
 		step:		1,
 		debug:		false,
