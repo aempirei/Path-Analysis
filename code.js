@@ -51,25 +51,42 @@ Path.prototype.dimensions = function() {
 	return this.vector.length;
 };
 
-Path.prototype.toString = function() {
+Path.prototype.toString = function(type) {
 
-	var s = this.dimensions().toString() + 'x' + this.length().toString() + ' |' + this.arcLength().toPrecision(state.precision)  + '| = ';
+		var s = "";
 
-	for(var n = 0; n < this.length(); n++) {
+		if(type === "d") {
 
-		for(m = 0; m < this.dimensions(); m++) {
-			s += this.vector[m][n].toPrecision(state.precision);
-			if(m < this.dimensions() - 1)
-				s += " ";
+				for(var n = 0; n < this.length(); n++) {
+						for(var m = 0; m < this.dimensions(); m++) {
+								s += m ? "," : (n ? "l" : "M");
+								s += this.vector[m][n];
+						}
+						s += (n + 1 == this.length()) ? "" : " ";
+				}
+
+		} else {
+
+
+				s += this.dimensions().toString() + 'x' + this.length().toString();
+				s += ' |' + this.arcLength().toPrecision(state.precision)  + '| = ';
+
+				for(var n = 0; n < this.length(); n++) {
+
+						for(m = 0; m < this.dimensions(); m++) {
+								s += this.vector[m][n].toPrecision(state.precision);
+								if(m < this.dimensions() - 1)
+										s += " ";
+						}
+
+						if(n < this.length() - 1)
+								s += " / ";
+				}
+
 		}
 
-		if(n < this.length() - 1)
-			s += " / ";
-	}
-
-	return s;
+		return s;
 };
-
 
 Path.prototype.normalize = function(norm) {
 	var coef = norm / this.arcLength();
@@ -166,6 +183,19 @@ Path.prototype.resample = function(step) {
 	}
 
 	return path;
+};
+
+Path.prototype.createElement = function() {
+
+		var e = document.createElementNS("http://www.w3.org/2000/svg", "path");
+
+		e.setAttribute("stroke","green");
+		e.setAttribute("stroke-width","2px");
+		e.setAttribute("fill", "none");
+
+		e.setAttribute("d", this.toString("d"));
+
+		return e;
 };
 
 function log(o,str) {
