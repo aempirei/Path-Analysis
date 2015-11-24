@@ -293,7 +293,7 @@ function pen_up(e) {
 		state.path = state.path.resample(state.step);
 		state.path.normalize(state.normal);
 
-		var str = "path #" + state.paths.length.toString() + ' ' + state.path.toString();
+		var str = "path #" + state.paths.length.toString() + ' ' + state.path.toString("d");
 
 		var p_element = document.createElement("p");
 
