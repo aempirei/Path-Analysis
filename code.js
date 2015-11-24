@@ -12,7 +12,7 @@ function initState() {
 		width:		400,
 		height:		300,
 		precision:	4,
-		normal:		128,
+		normal:		256,
 		step:		1,
 		debug:		false,
 		grid:		true,
