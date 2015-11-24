@@ -308,7 +308,7 @@ function pen_up(e) {
 
 		var e = state.path.createElement();
 
-		e.setAttribute("stroke","rgba(255,0,0,0.5)");
+		e.setAttribute("stroke","red");
 
 		s.appendChild(e);
 
