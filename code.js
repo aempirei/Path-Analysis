@@ -58,11 +58,14 @@ Path.prototype.toString = function(type) {
 		if(type === "d") {
 
 				for(var n = 0; n < this.length(); n++) {
+
 						for(var m = 0; m < this.dimensions(); m++) {
-								s += m ? "," : (n ? "l" : "M");
+								s += m ? "," : "l";
 								s += this.vector[m][n].toPrecision(state.precision);
 						}
-						s += (n + 1 == this.length()) ? "" : " ";
+
+						if(n != this.length() - 1)
+								s += " ";
 				}
 
 		} else {
