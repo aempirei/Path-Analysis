@@ -53,43 +53,43 @@ Path.prototype.dimensions = function() {
 
 Path.prototype.toString = function(type) {
 
-		var s = "";
+		var str = "";
 
 		if(type === "d") {
 
-				s += "M" + (state.width / 2) + "," + (state.height / 2) + " ";
+				str += "M" + (state.width / 2) + "," + (state.height / 2) + " ";
 
 				for(var n = 0; n < this.length(); n++) {
 
 						for(var m = 0; m < this.dimensions(); m++) {
-								s += m ? "," : "l";
-								s += this.vector[m][n].toPrecision(state.precision);
+								str += m ? "," : "l";
+								str += this.vector[m][n].toPrecision(state.precision);
 						}
 
-						s += " ";
+						str += " ";
 				}
 
 		} else {
 
 
-				s += this.dimensions().toString() + 'x' + this.length().toString();
-				s += ' |' + this.arcLength().toPrecision(state.precision)  + '| = ';
+				str += this.dimensions().toString() + 'x' + this.length().toString();
+				str += ' |' + this.arcLength().toPrecision(state.precision)  + '| = ';
 
 				for(var n = 0; n < this.length(); n++) {
 
 						for(m = 0; m < this.dimensions(); m++) {
-								s += this.vector[m][n].toPrecision(state.precision);
+								str += this.vector[m][n].toPrecision(state.precision);
 								if(m < this.dimensions() - 1)
-										s += " ";
+										str += " ";
 						}
 
 						if(n < this.length() - 1)
-								s += " / ";
+								str += " / ";
 				}
 
 		}
 
-		return s;
+		return str;
 };
 
 Path.prototype.normalize = function(norm) {
@@ -193,7 +193,6 @@ Path.prototype.createElement = function() {
 
 		var e = document.createElementNS("http://www.w3.org/2000/svg", "path");
 
-		e.setAttribute("stroke","green");
 		e.setAttribute("stroke-width","2px");
 		e.setAttribute("fill", "none");
 
@@ -297,7 +296,7 @@ function pen_up(e) {
 		state.path = state.path.resample(state.step);
 		state.path.normalize(state.normal);
 
-		var str = "path #" + state.paths.length.toString() + ' ' + state.path.toString("d");
+		var str = "path #" + state.paths.length.toString() + ' ' + state.path.toString();
 
 		var p_element = document.createElement("p");
 
@@ -306,6 +305,12 @@ function pen_up(e) {
 		con.appendChild(p_element);
 
 		state.paths.push(state.path);
+
+		var e = state.path.createElement();
+
+		e.setAttribute("stroke","rgba(255,0,0,0.5)");
+
+		s.appendChild(e);
 
 		log(dbg, "paths=" + state.paths.length.toString() + " path=" + state.path.length().toString());
 	}
