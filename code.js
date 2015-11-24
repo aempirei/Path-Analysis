@@ -57,6 +57,8 @@ Path.prototype.toString = function(type) {
 
 		if(type === "d") {
 
+				s += "M" + (state.width / 2) + "," + (state.height / 2) + " ";
+
 				for(var n = 0; n < this.length(); n++) {
 
 						for(var m = 0; m < this.dimensions(); m++) {
@@ -64,8 +66,7 @@ Path.prototype.toString = function(type) {
 								s += this.vector[m][n].toPrecision(state.precision);
 						}
 
-						if(n != this.length() - 1)
-								s += " ";
+						s += " ";
 				}
 
 		} else {
