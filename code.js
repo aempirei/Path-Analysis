@@ -5,14 +5,14 @@ function initState() {
 	state = {
 		active:		false,
 		dirty:		false,
-		n:		0,
+		n:			0,
 		path:		null,
 		paths:		[],
-		sp:		null,
-		width:		400,
+		sp:			null,
+		width:		365,
 		height:		300,
-		precision:	6,
-		normal:		256,
+		precision:	4,
+		normal:		192,
 		step:		1,
 		debug:		false,
 		grid:		true,
@@ -33,6 +33,8 @@ function initState() {
 	bgl.style.backgroundColor = state.grid ? "black" : "white";
 	bdl.style.backgroundColor = state.debug ? "black" : "white";
 };
+
+var svgns = "http://www.w3.org/2000/svg";
 
 function hypot() {
 	var x = 0;
@@ -57,7 +59,7 @@ Path.prototype.toString = function(type) {
 
 		if(type === "d") {
 
-				str += "M" + (state.width / 2) + "," + (state.height / 2) + " ";
+				str += "M100,100 ";
 
 				for(var n = 0; n < this.length(); n++) {
 
@@ -189,9 +191,15 @@ Path.prototype.resample = function(step) {
 	return path;
 };
 
+Path.prototype.e = function(n) {
+		var v = this.column(n);
+		var h = hypot.apply(null, v);
+		return Math.sqrt(1 - h * h);
+};
+
 Path.prototype.createElement = function() {
 
-		var e = document.createElementNS("http://www.w3.org/2000/svg", "path");
+		var e = document.createElementNS(svgns, "path");
 
 		e.setAttribute("stroke-width","2px");
 		e.setAttribute("fill", "none");
@@ -220,7 +228,7 @@ function setDim(o,x,y) {
 
 function createGrid(id, width, height, gap) {
 
-	var e = document.createElementNS("http://www.w3.org/2000/svg", "path");
+	var e = document.createElementNS(svgns, "path");
 
 	e.setAttribute("id", id);
 
@@ -270,7 +278,7 @@ function pen_down(e) {
 
 		state.path.push(e.offsetX, e.offsetY);
 
-		state.sp = document.createElementNS("http://www.w3.org/2000/svg", "path");
+		state.sp = document.createElementNS(svgns, "path");
 
 		state.sp.setAttribute("stroke","green");
 		state.sp.setAttribute("stroke-width","2px");
@@ -294,15 +302,6 @@ function pen_up(e) {
 		state.path.dx();
 		state.path.normalize(state.normal);
 		state.path = state.path.resample(state.step);
-		state.path.normalize(state.normal);
-
-		var str = "path #" + state.paths.length.toString() + ' ' + state.path.toString();
-
-		var p_element = document.createElement("p");
-
-		p_element.appendChild(document.createTextNode(str));
-
-		con.appendChild(p_element);
 
 		state.paths.push(state.path);
 
@@ -310,7 +309,16 @@ function pen_up(e) {
 
 		e.setAttribute("stroke","red");
 
-		s.appendChild(e);
+		s.removeChild(state.sp);
+
+		var svg = document.createElementNS(svgns, "svg");
+
+		svg.style.height = "200px";
+		svg.style.width = "200px";
+
+		svg.appendChild(e);
+
+		con.appendChild(svg);
 
 		log(dbg, "paths=" + state.paths.length.toString() + " path=" + state.path.length().toString());
 	}
@@ -356,8 +364,17 @@ window.onload = function(e) {
 	s.ontouchmove = pen_move;
 
 	bs.onclick = function(e) {
-		initState();
+
 		log(dbg, "save button clicked!");
+
+		// aggregate paths
+
+		// compute mean path
+		// compute path covariance
+		// compute path harmonics
+		// compute path signature
+
+		initState();
 	};
 
 	br.onclick = function(e) {
