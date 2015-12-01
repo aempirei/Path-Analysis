@@ -49,6 +49,24 @@ function Path(dim) {
 		this.vector.push([]);
 }
 
+Path.mean = function() {
+
+		var path = new Path(arguments[0].dimensions());
+
+		for(m = 0; m < path.dimensions(); m++) {
+				for(var n = 0; n < arguments[0].length(); n++) {
+
+						path.vector[m][n] = 0;
+
+						for(var k = 0; k < arguments.length; k++)
+								path.vector[m][n] += arguments[k].vector[m][n];
+
+						path.vector[m][n] /= arguments.length;
+				}
+		}
+		return path;
+}
+
 Path.prototype.dimensions = function() {
 	return this.vector.length;
 };
@@ -374,7 +392,22 @@ window.onload = function(e) {
 		// compute path harmonics
 		// compute path signature
 
-		initState();
+		var mean_path = Path.mean.apply(null, state.paths);
+
+		var e = mean_path.createElement();
+
+		e.setAttribute("stroke","blue");
+
+		var svg = document.createElementNS(svgns, "svg");
+
+		svg.style.height = "200px";
+		svg.style.width = "200px";
+
+		svg.appendChild(e);
+
+		con.appendChild(svg);
+
+		// initState();
 	};
 
 	br.onclick = function(e) {
