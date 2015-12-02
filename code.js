@@ -51,20 +51,97 @@ function Path(dim) {
 
 Path.mean = function() {
 
-		var path = new Path(arguments[0].dimensions());
+		var mean = new Path(arguments[0].dimensions());
 
-		for(m = 0; m < path.dimensions(); m++) {
+		for(var m = 0; m < mean.dimensions(); m++) {
 				for(var n = 0; n < arguments[0].length(); n++) {
 
-						path.vector[m][n] = 0;
+						mean.vector[m][n] = 0;
 
 						for(var k = 0; k < arguments.length; k++)
-								path.vector[m][n] += arguments[k].vector[m][n];
+								mean.vector[m][n] += arguments[k].vector[m][n];
 
-						path.vector[m][n] /= arguments.length;
+						mean.vector[m][n] /= arguments.length;
 				}
 		}
-		return path;
+
+		return mean;
+};
+
+Path.covariance = function() {
+
+		var mean = Path.mean.apply(null, arguments);
+
+		var sigma = new Path(mean.dimensions() * mean.dimensions());
+
+		for(var n = 0; n < mean.length(); n++) {
+
+				for(var i = 0; i < mean.dimensions(); i++) {
+						for(var j = 0; j < mean.dimensions(); j++) {
+
+								var cov = 0;
+
+								for(var k = 0; k < arguments.length; k++)
+										cov += (arguments[k].vector[i][n] - mean.vector[i][n]) * (arguments[k].vector[j][n] - mean.vector[j][n]); 
+
+								cov /= arguments.length;
+
+								sigma.vector[i + j * mean.dimensions()][n] = cov;
+						}
+				}
+		}
+
+		return sigma;
+};
+
+Path.eigenvalues = function() {
+
+	var sigma = Path.covariance.apply(null, arguments);
+
+	var lambda = new Path(arguments[0].dimensions());
+
+	switch(lambda.dimensions()) {
+
+			case 1:
+
+				for(var n = 0; n < sigma.length(); n++)
+						lambda.vector[0][n] = 1;
+
+				break;
+
+			case 2:
+
+				// det | (x - a) b . c (x - d) |
+
+				for(var n = 0; n < sigma.length(); n++) {
+
+						var a = sigma.vector[0][n];
+						var b = sigma.vector[1][n];
+						var c = sigma.vector[2][n];
+						var d = sigma.vector[3][n];
+
+						var s = (a + d) / 2;
+
+						var t = Math.sqrt((s * s) + (b * c) - (a * d));
+
+						lambda.vector[0][n] = s + t;
+						lambda.vector[1][n] = s - t;
+				}
+
+				break;
+
+			default:
+
+				window.alert("dimensionality of " + lambda.dimensions() + " too high.");
+
+				for(var n = 0; n < sigma.length(); n++)
+						for(var m = 0; m < lambda.dimensions(); m++)
+								lambda.vector[m][n] = 0;
+
+				break;
+	}
+
+	return lambda;
 }
 
 Path.prototype.dimensions = function() {
@@ -406,6 +483,14 @@ window.onload = function(e) {
 		svg.appendChild(e);
 
 		con.appendChild(svg);
+
+		var lambda_path = Path.eigenvalues.apply(null, state.paths);
+
+		var f = document.createElement("p");
+		var g = document.createTextNode(lambda_path.toString());
+
+		f.appendChild(g);
+		con.appendChild(f);
 
 		// initState();
 	};
