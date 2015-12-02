@@ -12,7 +12,7 @@ function initState() {
 		width:		365,
 		height:		300,
 		precision:	4,
-		normal:		192,
+		normal:		256,
 		step:		1,
 		debug:		false,
 		grid:		true,
@@ -154,7 +154,7 @@ Path.prototype.toString = function(type) {
 
 		if(type === "d") {
 
-				str += "M100,100 ";
+				str += "M0,0 ";
 
 				for(var n = 0; n < this.length(); n++) {
 
@@ -286,6 +286,32 @@ Path.prototype.resample = function(step) {
 	return path;
 };
 
+Path.prototype.range = function() {
+
+		var range = [];
+
+		for(var m = 0; m < this.dimensions(); m++) {
+
+				var min = 0;
+				var max = 0;
+				var x = 0;
+
+				for(var n = 0; n < this.length(); n++) {
+
+						x += this.vector[m][n];
+
+						if(x > max)
+								max = x;
+						else if(x < min)
+								min = x;
+				}
+
+				range[m] = { min: min, max: max, size: max - min + 1 };
+		}
+
+		return range;
+};
+
 Path.prototype.e = function(n) {
 		var v = this.column(n);
 		var h = hypot.apply(null, v);
@@ -384,6 +410,26 @@ function pen_down(e) {
 	}
 }
 
+function createGlyph(path) {
+
+		var svg = document.createElementNS(svgns, "svg");
+
+		var range = path.range();
+
+		var minX = Math.round(range[0].min) - 5;
+		var minY = Math.round(range[1].min) - 5;
+		var sizeX = Math.round(range[0].size) + 10;
+		var sizeY = Math.round(range[1].size) + 10;
+
+		svg.setAttribute("width",  sizeX);
+		svg.setAttribute("height", sizeY);
+		svg.setAttribute("viewBox", minX + " " + minY + " " + sizeX + " " + sizeY);
+
+		svg.style.border = "none";
+
+		return svg;
+}
+
 function pen_up(e) {
 
 	log(dbg, "svg pen_up(" + e.type + ")");
@@ -400,18 +446,15 @@ function pen_up(e) {
 
 		state.paths.push(state.path);
 
-		var e = state.path.createElement();
-
-		e.setAttribute("stroke","red");
-
 		s.removeChild(state.sp);
 
-		var svg = document.createElementNS(svgns, "svg");
+		var svg = createGlyph(state.path);
 
-		svg.style.height = "200px";
-		svg.style.width = "200px";
+		var path_element = state.path.createElement();
 
-		svg.appendChild(e);
+		path_element.setAttribute("stroke","red");
+
+		svg.appendChild(path_element);
 
 		con.appendChild(svg);
 
@@ -471,26 +514,17 @@ window.onload = function(e) {
 
 		var mean_path = Path.mean.apply(null, state.paths);
 
-		var e = mean_path.createElement();
+		var svg = createGlyph(mean_path);
 
-		e.setAttribute("stroke","blue");
+		var path_element = mean_path.createElement();
 
-		var svg = document.createElementNS(svgns, "svg");
+		path_element.setAttribute("stroke","gray");
 
-		svg.style.height = "200px";
-		svg.style.width = "200px";
-
-		svg.appendChild(e);
+		svg.appendChild(path_element);
 
 		con.appendChild(svg);
 
 		var lambda_path = Path.eigenvalues.apply(null, state.paths);
-
-		var f = document.createElement("p");
-		var g = document.createTextNode(lambda_path.toString());
-
-		f.appendChild(g);
-		con.appendChild(f);
 
 		// initState();
 	};
