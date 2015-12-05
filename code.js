@@ -94,7 +94,7 @@ Path.covariance = function() {
 		return sigma;
 };
 
-Path.eigenvalues = function() {
+Path.eigensystem = function() {
 
 	var sigma = Path.covariance.apply(null, arguments);
 
@@ -111,8 +111,6 @@ Path.eigenvalues = function() {
 
 			case 2:
 
-				// det | (x - a) b . c (x - d) |
-
 				for(var n = 0; n < sigma.length(); n++) {
 
 						var a = sigma.vector[0][n];
@@ -120,12 +118,32 @@ Path.eigenvalues = function() {
 						var c = sigma.vector[2][n];
 						var d = sigma.vector[3][n];
 
+						var detA = a * d - b * c;
+
 						var s = (a + d) / 2;
 
-						var t = Math.sqrt((s * s) + (b * c) - (a * d));
+						var t = Math.sqrt((s * s) - detA);
 
-						lambda.vector[0][n] = s + t;
-						lambda.vector[1][n] = s - t;
+						var X1 = s + t;
+						var X2 = s - t;
+
+						lambda.vector[0][n] = X1;
+						lambda.vector[1][n] = X2;
+
+						var x1 = X1 * (d - b) - detA;
+						var y1 = X1 * (a - c) - detA;
+
+						var h1 = hypot(x1, y1);
+
+						var x2 = X2 * (d - b) - detA;
+						var y2 = X2 * (a - c) - detA;
+
+						var h2 = hypot(x2, y2);
+
+						sigma.vector[0][n] = x1 / h1;
+						sigma.vector[1][n] = y1 / h1;
+						sigma.vector[2][n] = x2 / h2;
+						sigma.vector[3][n] = y2 / h2;
 				}
 
 				break;
@@ -141,8 +159,8 @@ Path.eigenvalues = function() {
 				break;
 	}
 
-	return lambda;
-}
+	return [ lambda, sigma ];
+};
 
 Path.prototype.dimensions = function() {
 	return this.vector.length;
@@ -524,7 +542,7 @@ window.onload = function(e) {
 
 		con.appendChild(svg);
 
-		var lambda_path = Path.eigenvalues.apply(null, state.paths);
+		var eigen = Path.eigensystem.apply(null, state.paths);
 
 		// initState();
 	};
