@@ -43,6 +43,18 @@ function hypot() {
 	return Math.sqrt(x);
 }
 
+function evalue() {
+		var h = hypot.apply(null, arguments);
+		return Math.sqrt(1 - h * h);
+}
+
+function dot(u,v) {
+		var x = 0;
+		for(var i = 0; i < u.length; i++)
+				x += u[i] * v[i];
+		
+}
+
 function Path(dim) {
 	this.vector = [];
 	for(var n = 0; n < dim; n++)
@@ -331,9 +343,7 @@ Path.prototype.range = function() {
 };
 
 Path.prototype.e = function(n) {
-		var v = this.column(n);
-		var h = hypot.apply(null, v);
-		return Math.sqrt(1 - h * h);
+		return evalue.apply(null, this.column(n));
 };
 
 Path.prototype.createElement = function() {
@@ -347,6 +357,47 @@ Path.prototype.createElement = function() {
 
 		return e;
 };
+
+function alignment(p, q) {
+			
+		var gap = -1;
+
+		var W = p.length() + 1;
+		var H = q.length() + 1;
+
+		var m = [];
+
+		for(var i = 0; i < W; i++)
+				m[i + 0 * W] = gap * i;
+
+		for(var j = 0; j < H; j++)
+				m[0 + j * W] = gap * j;
+
+		var F = function(I, J) {
+				return m[I + J * W];
+		};
+
+		var S = function(I, J) {
+
+				var Ai = p.column(I - 1);
+				var Bj = q.column(J - 1);
+
+				Ai.push(evalue.apply(null, Ai));
+				Bj.push(evalue.apply(null, Bj));
+
+				return dot(Ai, Bj);
+		};
+
+		for(var i = 1; i < W; i++) {
+				for(var j = 1; j < H; j++) {
+
+						var Match = F(i-1, j-1) + S(i, j);
+						var Delete = F(i-1, j) + gap;
+						var Insert = F(i, j-1) + gap;
+						m[i + j * W] = Math.max(Match, Insert, Delete);
+				}
+		}
+}
 
 function log(o,str) {
 	if(state.debug) {
