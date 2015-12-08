@@ -656,13 +656,12 @@ window.onload = function(e) {
 										var das = p.align(state.paths[k]);
 
 										for(var i = 0; i < p.length(); i++)
-											as[i] += das[i];
+												as[i] += das[i];
 								}
 
 								var q = p.stretch(as);
 
 								aligned_paths.push(q);
-								state.paths.push(q);
 
 								displayGlyph(con, q, "blue");
 						}
@@ -670,6 +669,8 @@ window.onload = function(e) {
 						var aligned_mu = Path.mean.apply(null, aligned_paths);
 
 						displayGlyph(con, aligned_mu, "gray");
+
+						Array.prototype.push.apply(state.paths, aligned_paths);
 				}
 
 				// initState();
