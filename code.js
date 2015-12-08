@@ -265,17 +265,19 @@ Path.prototype.dx = function() {
 				this.vector[m].pop();
 };
 
-Path.prototype.column = function(n) {
+Path.prototype.column = function(n,k) {
 		var v = [];
+		if(k === undefined)
+				k = 1;
 		for(var m = 0; m < this.dimensions(); m++)
-				v.push(this.vector[m][n]);
+				v.push(this.vector[m][n] * k);
 		return v;
 };
 
 Path.prototype.zero = function() {
 		var v = [];
 		for(var m = 0; m < this.dimensions(); m++)
-				v.push(0.0);
+				v.push(0);
 		return v;
 }
 
@@ -367,21 +369,29 @@ Path.prototype.createElement = function() {
 		return e;
 };
 
-function alignment(p, q) {
+Path.prototype.stretch = function(ns) {
 
-		var W = p.length() + 1;
-		var H = q.length() + 1;
+		var p = new Path(this.dimensions());
+
+		for(var k = 0; k < this.length(); k++)
+				for(var i = 0; i <= ns[k]; i++)
+						Path.prototype.push.apply(p, this.column(k));
+
+		return p;
+};
+
+Path.prototype.align = function(q, as) {
+
+		var p = this;
 
 		var m = [];
 
-		for(var i = 0; i < W; i++)
-				m[i + 0 * W] = 0;
+		var K = function(I,J) {
+				return I + J * (p.length() + 1);
+		};
 
-		for(var j = 0; j < H; j++)
-				m[0 + j * W] = 0;
-
-		var F = function(I, J) {
-				return m[I + J * W];
+		var F = function(I,J) {
+				return m[K(I,J)];
 		};
 
 		var S = function(I, J) {
@@ -392,57 +402,45 @@ function alignment(p, q) {
 				return dot(Ai, Bj);
 		};
 
-		for(var i = 1; i < W; i++) {
-				for(var j = 1; j < H; j++) {
+		for(var i = 0; i <= p.length(); i++)
+				m[K(i,0)] = 0;
 
-						var Match = F(i-1, j-1) + S(i, j);
-						var Delete = F(i-1, j);
-						var Insert = F(i, j-1);
+		for(var j = 0; j <= q.length(); j++)
+				m[K(0,j)] = 0;
 
-						m[i + j * W] = Math.max(Match, Insert, Delete);
-				}
-		}
+		for(var i = 1; i <= p.length(); i++)
+				for(var j = 1; j <= q.length(); j++)
+						m[K(i,j)] = Math.max(F(i-1,j-1) + S(i,j), F(i-1,j), F(i,j-1));
 
-		var A = new Path(p.dimensions());
-		var B = new Path(q.dimensions());
+		var as = [];
+
+		for(var n = 0; n < p.length(); n++)
+			as[n] = -1;
 
 		var i = p.length();
 		var j = q.length();
 
 		while(i > 0 || j > 0) {
 
-				var Ai;
-				var Bj;
+				as[i > 0 ? i - 1 : 0]++;
 
-				if (i > 0 && j > 0 && fpcompare(F(i,j), F(i-1, j-1) + S(i, j))) {
-
-						Ai = p.column(i - 1);
-						Bj = q.column(j - 1);
+				if (i > 0 && j > 0 && fpcompare(F(i, j), F(i-1, j-1) + S(i, j))) {
 
 						i--;
 						j--;
 
-				} else if (i > 0 && fpcompare(F(i,j), F(i-1,j))) {
-
-						Ai = p.column(i - 1);
-						Bj = q.zero();
+				} else if (i > 0 && fpcompare(F(i, j), F(i-1, j))) {
 
 						i--;
 
-				} else {
-
-						Ai = p.zero();
-						Bj = q.column(j - 1);
+				} else  {
 
 						j--;
 				}
-
-				Path.prototype.unshift.apply(A,Ai);
-				Path.prototype.unshift.apply(B,Bj);
 		}
 
-		return [ A, B ];
-}
+		return as;
+};
 
 function log(o,str) {
 		if(state.debug) {
@@ -544,6 +542,19 @@ function createGlyph(path) {
 		return svg;
 }
 
+function displayGlyph(container, path, color) {
+
+		var svg = createGlyph(path);
+
+		var element = path.createElement();
+
+		element.setAttribute("stroke", color);
+
+		svg.appendChild(element);
+
+		container.appendChild(svg);
+}
+
 function pen_up(e) {
 
 		log(dbg, "svg pen_up(" + e.type + ")");
@@ -562,15 +573,7 @@ function pen_up(e) {
 
 				s.removeChild(state.sp);
 
-				var svg = createGlyph(state.path);
-
-				var path_element = state.path.createElement();
-
-				path_element.setAttribute("stroke","red");
-
-				svg.appendChild(path_element);
-
-				con.appendChild(svg);
+				displayGlyph(con, state.path, "red");
 
 				log(dbg, "paths=" + state.paths.length.toString() + " path=" + state.path.length().toString());
 		}
@@ -628,38 +631,45 @@ window.onload = function(e) {
 
 				var mean_path = Path.mean.apply(null, state.paths);
 
-				var svg = createGlyph(mean_path);
-
-				var path_element = mean_path.createElement();
-
-				path_element.setAttribute("stroke","gray");
-
-				svg.appendChild(path_element);
-
-				con.appendChild(svg);
+				displayGlyph(con, mean_path, "gray");
 
 				var eigen = Path.eigensystem.apply(null, state.paths);
 
 				if(state.paths.length > 1) {
 
-						var align = alignment(state.paths[0], state.paths[1]);
+						var aligned_paths = [];
 
-						Array.prototype.push.apply(state.paths, align);
+						for(var n = 0; n < state.paths.length; n++) {
 
-						for(var n = 0; n < align.length; n++) {
-								var svg = createGlyph(align[n]);
-								var ae = align[n].createElement();
-								ae.setAttribute("stroke", "blue");
-								svg.appendChild(ae);
-								con.appendChild(svg);
+								var p = state.paths[n];
+
+								var as = [];
+
+								for(var k = 0; k < p.length(); k++)
+										as[k] = 0;
+
+								for(var k = 0; k < state.paths.length; k++) {
+
+										if(n == k)
+												continue;
+
+										var das = p.align(state.paths[k]);
+
+										for(var i = 0; i < p.length(); i++)
+											as[i] += das[i];
+								}
+
+								var q = p.stretch(as);
+
+								aligned_paths.push(q);
+								state.paths.push(q);
+
+								displayGlyph(con, q, "blue");
 						}
 
-						var mean2 = Path.mean.apply(null, align);
-						var svg = createGlyph(mean2);
-						var mean2e = mean2.createElement();
-						mean2e.setAttribute("stroke", "lightblue");
-						svg.appendChild(mean2e);
-						con.appendChild(svg);
+						var aligned_mu = Path.mean.apply(null, aligned_paths);
+
+						displayGlyph(con, aligned_mu, "gray");
 				}
 
 				// initState();
