@@ -56,7 +56,7 @@ function dot(u,v) {
 		var x = 0;
 		for(var i = 0; i < u.length; i++)
 				x += u[i] * v[i];
-
+		return x;
 }
 
 function Path(dim) {
@@ -256,11 +256,13 @@ Path.prototype.push = function() {
 };
 
 Path.prototype.dx = function() {
-		for(var m = 0; m < this.dimensions(); m++) {
+
+		for(var m = 0; m < this.dimensions(); m++)
 				for(var n = 1; n < this.length(); n++)
 						this.vector[m][n - 1] = this.vector[m][n] - this.vector[m][n - 1];
+
+		for(var m = 0; m < this.dimensions(); m++)
 				this.vector[m].pop();
-		}
 };
 
 Path.prototype.column = function(n) {
@@ -273,7 +275,7 @@ Path.prototype.column = function(n) {
 Path.prototype.zero = function() {
 		var v = [];
 		for(var m = 0; m < this.dimensions(); m++)
-				v.push(0);
+				v.push(0.0);
 		return v;
 }
 
@@ -317,7 +319,7 @@ Path.prototype.resample = function(step) {
 				var w = this.step(n, x, step);
 				n = w.n;
 				x = w.x;
-				this.push.apply(path, w.v);
+				Path.prototype.push.apply(path, w.v);
 		}
 
 		return path;
@@ -367,18 +369,16 @@ Path.prototype.createElement = function() {
 
 function alignment(p, q) {
 
-		var gap = -1;
-
 		var W = p.length() + 1;
 		var H = q.length() + 1;
 
 		var m = [];
 
 		for(var i = 0; i < W; i++)
-				m[i + 0 * W] = gap * i;
+				m[i + 0 * W] = 0;
 
 		for(var j = 0; j < H; j++)
-				m[0 + j * W] = gap * j;
+				m[0 + j * W] = 0;
 
 		var F = function(I, J) {
 				return m[I + J * W];
@@ -389,9 +389,6 @@ function alignment(p, q) {
 				var Ai = p.column(I - 1);
 				var Bj = q.column(J - 1);
 
-				Ai.push(evalue.apply(null, Ai));
-				Bj.push(evalue.apply(null, Bj));
-
 				return dot(Ai, Bj);
 		};
 
@@ -399,8 +396,8 @@ function alignment(p, q) {
 				for(var j = 1; j < H; j++) {
 
 						var Match = F(i-1, j-1) + S(i, j);
-						var Delete = F(i-1, j) + gap;
-						var Insert = F(i, j-1) + gap;
+						var Delete = F(i-1, j);
+						var Insert = F(i, j-1);
 
 						m[i + j * W] = Math.max(Match, Insert, Delete);
 				}
@@ -425,7 +422,7 @@ function alignment(p, q) {
 						i--;
 						j--;
 
-				} else if (i > 0 && fpcompare(F(i,j), F(i-1,j) + gap)) {
+				} else if (i > 0 && fpcompare(F(i,j), F(i-1,j))) {
 
 						Ai = p.column(i - 1);
 						Bj = q.zero();
@@ -440,8 +437,8 @@ function alignment(p, q) {
 						j--;
 				}
 
-				A.unshift(Ai);
-				B.unshift(Bj);
+				Path.prototype.unshift.apply(A,Ai);
+				Path.prototype.unshift.apply(B,Bj);
 		}
 
 		return [ A, B ];
@@ -643,6 +640,28 @@ window.onload = function(e) {
 
 				var eigen = Path.eigensystem.apply(null, state.paths);
 
+				if(state.paths.length > 1) {
+
+						var align = alignment(state.paths[0], state.paths[1]);
+
+						Array.prototype.push.apply(state.paths, align);
+
+						for(var n = 0; n < align.length; n++) {
+								var svg = createGlyph(align[n]);
+								var ae = align[n].createElement();
+								ae.setAttribute("stroke", "blue");
+								svg.appendChild(ae);
+								con.appendChild(svg);
+						}
+
+						var mean2 = Path.mean.apply(null, align);
+						var svg = createGlyph(mean2);
+						var mean2e = mean2.createElement();
+						mean2e.setAttribute("stroke", "lightblue");
+						svg.appendChild(mean2e);
+						con.appendChild(svg);
+				}
+
 				// initState();
 		};
 
@@ -654,11 +673,11 @@ window.onload = function(e) {
 		bd.onclick = function(e) {
 				state.debug = !state.debug;
 				bdl.style.backgroundColor = state.debug ? "black" : "white";
-		}
+		};
 
 		bg.onclick = function(e) {
 				state.grid = !state.grid;
 				bgl.style.backgroundColor = state.grid ? "black" : "white";
 				document.getElementById("grid").setAttribute("stroke", state.grid ? "lightsteelblue" : "white");
-		}
+		};
 };
