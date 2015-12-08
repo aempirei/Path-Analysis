@@ -86,23 +86,23 @@ Path.mean = function() {
 
 Path.covariance = function() {
 
-		var mean = Path.mean.apply(null, arguments);
+		var mu = Path.mean.apply(null, arguments);
 
-		var sigma = new Path(mean.dimensions() * mean.dimensions());
+		var sigma = new Path(mu.dimensions() * mu.dimensions());
 
-		for(var n = 0; n < mean.length(); n++) {
+		for(var n = 0; n < mu.length(); n++) {
 
-				for(var i = 0; i < mean.dimensions(); i++) {
-						for(var j = 0; j < mean.dimensions(); j++) {
+				for(var i = 0; i < mu.dimensions(); i++) {
+						for(var j = 0; j < mu.dimensions(); j++) {
 
 								var cov = 0;
 
 								for(var k = 0; k < arguments.length; k++)
-										cov += (arguments[k].vector[i][n] - mean.vector[i][n]) * (arguments[k].vector[j][n] - mean.vector[j][n]); 
+										cov += (arguments[k].vector[i][n] - mu.vector[i][n]) * (arguments[k].vector[j][n] - mu.vector[j][n]); 
 
 								cov /= arguments.length;
 
-								sigma.vector[i + j * mean.dimensions()][n] = cov;
+								sigma.vector[i + j * mu.dimensions()][n] = cov;
 						}
 				}
 		}
