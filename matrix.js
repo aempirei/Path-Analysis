@@ -4,10 +4,10 @@
  * Written by Christopher Abad <aempirei@256.bz>
  */
 
- "use strict";
+"use strict";
 
 function readOnly(o,s,x) {
-		Object.defineProperty(o,s,{writable:false,value:x});
+	Object.defineProperty(o,s,{writable:false,value:x});
 }
 
 function transposeIndex(i,j) {
@@ -19,118 +19,125 @@ function subIndex(i,j) {
 }
 
 function linearIndex(i,j) {
-		return i + j * this.width;
+	return i + j * this.width;
 }
 
 function Matrix(width,height,parent,index) {
 
-		readOnly(this,'width',width);
-		readOnly(this,'height',height);
-		readOnly(this,'parent',parent);
+	readOnly(this,'width',width);
+	readOnly(this,'height',height);
+	readOnly(this,'parent',parent);
 
-		if(parent === undefined) {
+	if(parent === undefined) {
 
-				readOnly(this,'data',[]);
-				readOnly(this,'index',linearIndex);
+		readOnly(this,'data',[]);
+		readOnly(this,'index',linearIndex);
 
-				var i = width * height;
+		var i = width * height;
 
-				while(i--)
-						this.data[i] = 0;
-		} else {
+		while(i--)
+			this.data[i] = 0;
+	} else {
 
-				readOnly(this,'index',index === undefined ? subIndex : index);
+		readOnly(this,'index',index === undefined ? subIndex : index);
 
-				readOnly(this,'data',parent.data);
-		}
+		readOnly(this,'data',parent.data);
+	}
 }
 
 Matrix.prototype.get = function(i,j) {
-		return this.data[this.index(i,j)];
+	return this.data[this.index(i,j)];
 };
 
 Matrix.prototype.set = function(i,j,x) {
-		return ( this.data[this.index(i,j)] = x );
+	return ( this.data[this.index(i,j)] = x );
 };
 
 Matrix.prototype.transpose = function() {
-		return new Matrix(this.height,this.width,this,transposeIndex);
+	return new Matrix(this.height,this.width,this,transposeIndex);
 };
 
 Matrix.prototype.submatrix = function(w,h,i,j) {
-		var m = new Matrix(w,h,this);
-		readOnly(m,'i0',i);
-		readOnly(m,'j0',j);
-		return m;
+	var m = new Matrix(w,h,this);
+	readOnly(m,'i0',i);
+	readOnly(m,'j0',j);
+	return m;
 };
 
 Matrix.prototype.row = function(j) {
-		return this.submatrix(this.width,1,0,j);
+	return this.submatrix(this.width,1,0,j);
 };
 
 Matrix.prototype.column = function(i) {
-		return this.submatrix(1,this.height,i,0);
+	return this.submatrix(1,this.height,i,0);
 };
 
 Matrix.prototype.foreach = function(f) {
-		for(var i = 0; i < this.width; i++)
-				for(var j = 0; j < this.height; j++)
-						f(this,i,j);
+	for(var i = 0; i < this.width; i++)
+		for(var j = 0; j < this.height; j++)
+			f.call(this,i,j);
+	return this;
 };
 
 Matrix.prototype.times = function(x) {
 
-		var m;
+	if(x instanceof this.constructor) {
 
-		if(x instanceof this.constructor) {
-			var A = this;
-			if(x.height !== A.width)
-				throw 'left matrix width and right matrix height not equal!';
-			m = new Matrix(x.width,A.height);
-			m.foreach(function(o,i,j) {
-				var dot = 0;
-				for(var k = 0; k < A.width; k++)
-					dot += A.get(k,j) * x.get(i,k);
-				m.set(i, j, dot);
-			});
-		} else {
-			m = this.copy();
-			m.foreach(function(o,i,j) { m.set(i, j, x * m.get(i,j)); });
-		}
+		var A = this;
 
-		return m;
+		if(x.height !== A.width)
+			throw 'left matrix width and right matrix height not equal!';
+
+		var m = new Matrix(x.width,A.height);
+
+		return m.foreach(function(i,j) {
+
+			var dot = 0;
+
+			for(var k = 0; k < A.width; k++)
+				dot += A.get(k,j) * x.get(i,k);
+
+			m.set(i, j, dot);
+		});
+
+	}
+
+	return this.copy().foreach(function(i,j) { m.set(i, j, x * m.get(i,j)); });
 };
 
-Matrix.prototype.plus = function(B) {
-		var A = this.copy();
-		A.foreach(function(o,i,j) { A.set(i, j, A.get(i,j) + B.get(i,j)); });
-		return A;
+Matrix.prototype.plus = function(b) {
+	return this.copy().foreach(function(i,j) { this.set(i, j, this.get(i,j) + b.get(i,j)); });
 };
 
 Matrix.prototype.copy = function() {
-		var m = new Matrix(this.width, this.height);
-		this.foreach(function(o,i,j) { m.set(i, j, o.get(i,j)); });
-		return m;
+	var a = new Matrix(this.width, this.height);
+	var b = this;
+	return a.foreach(function(i,j) { this.set(i, j, b.get(i,j)); });
 };
 
 Matrix.prototype.toString = function() {
+
 	var s = '';
+
 	for(var j = 0; j < this.height; j++) {
-			s += j.toString() + ':';
-			for(var i = 0; i < this.width; i++)
-					s += ' ' + this.get(i,j);
-			s += "\n";
+
+		s += j.toString() + ':';
+
+		for(var i = 0; i < this.width; i++)
+			s += ' ' + this.get(i,j);
+
+		s += "\n";
 	}
+
 	s += "\n";
+
 	return s;
 };
 
 window.onload = function(e) {
-
 	d.appendChild(document.createTextNode("Window Loaded!"));
-
 	var m = new Matrix(2,3);
-	m.foreach(function(o,i,j) { o.set(i,j,i + j * 2); });
+	m.foreach(function(i,j) { this.set(i,j,i+j*2); });
 	d.appendChild(document.createElement("br"));
 	d.appendChild(document.createTextNode(m.width + "x" + m.height)); d.appendChild(document.createElement("br"));
 	var pre = document.createElement("pre");
