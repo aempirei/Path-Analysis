@@ -15,8 +15,7 @@ svg,div {
 	overflow-y: auto;
 }
 #con {
-	border: none;
-	border-top: 1px dashed black;
+	border: 1px solid black;
 }
 #dash {
 	border: 1px dashed black;

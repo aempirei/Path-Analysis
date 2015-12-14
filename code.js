@@ -11,6 +11,7 @@ function initState() {
 		sp:		null,
 		width:		365,
 		height:		300,
+		padding:	5,
 		precision:	4,
 		normal:		256,
 		step:		1,
@@ -28,7 +29,10 @@ function initState() {
 	dbg.innerHTML = "";
 	s.innerHTML = "";
 
-	s.appendChild(createGrid('grid', state.width, state.height, state.gap));
+	s.setAttribute("width", state.width);
+	s.setAttribute("height", state.height);
+
+	s.appendChild(createGrid(s, 'grid', state.gap));
 
 	bgl.style.backgroundColor = state.grid ? "black" : "white";
 	bdl.style.backgroundColor = state.debug ? "black" : "white";
@@ -513,9 +517,12 @@ function setDim(o,x,y) {
 	o.style.height = y.toString() + "px";
 }
 
-function createGrid(id, width, height, gap) {
+function createGrid(p, id, gap) {
 
 	var e = document.createElementNS(svgns, "path");
+
+	var width = Number(p.offsetWidth);
+	var height = Number(p.offsetHeight);
 
 	e.setAttribute("id", id);
 
@@ -648,18 +655,21 @@ function pen_move(e) {
 	}
 }
 
+window.onresize = function(e) {
+	setDim(con, dbg.offsetWidth + dash.offsetWidth + s.offsetWidth + 10,
+	window.innerHeight - dbg.offsetHeight - dbg.offsetTop - state.padding * 3);
+};
+
 window.onload = function(e) {
 
 	var i = 10;
 	var j = 20;
 
 	initState();
-
-	s.setAttribute("width", state.width);
-	s.setAttribute("height", state.height);
-
+	
 	setDim(dbg, state.width, state.height);
-	setDim(con, dbg.offsetWidth + dash.offsetWidth + s.offsetWidth + 12, state.height);
+
+	window.onresize();
 
 	log(dbg, "Hello there, mother fucker!");
 
@@ -688,7 +698,7 @@ window.onload = function(e) {
 
 		displayGlyph(con, mean_path, "gray");
 
-		// var eigen = Path.eigensystem.apply(null, state.paths);
+		con.appendChild(document.createElement("br"));
 
 		if(state.paths.length > 1) {
 
@@ -708,6 +718,7 @@ window.onload = function(e) {
 			}
 
 			var aligned_mu = Path.mean.apply(null, aligned_paths);
+			var eigen = Path.eigensystem.apply(null, aligned_paths);
 
 			displayGlyph(con, aligned_mu, "gray");
 
