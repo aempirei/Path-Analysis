@@ -625,8 +625,6 @@ function pen_up(e) {
 
 		s.removeChild(state.sp);
 
-		con.innerHTML +=  "<span>(" + state.path.length() + ")</span>";
-
 		displayGlyph(con, state.path, "red");
 
 		log(dbg, "paths=" + state.paths.length.toString() + " path=" + state.path.length().toString());
