@@ -110,6 +110,32 @@ Path.covariance = function() {
 	return sigma;
 };
 
+function eigenvector(id,l,a,b,c,d) {
+
+	var x = 1;
+	var y = 1;
+
+	if(b != 0) {
+
+		y = x * (l - a) / b;
+
+	} else if(c != 0) {
+
+		x = y * (l - d) / c;
+
+	} else {
+
+		if(id == 1)
+			y = 0;
+		else
+			x = 0;
+	}
+
+	var h = hypot(x, y);
+
+	return [ x / h, y / h ];
+}
+
 Path.eigensystem = function() {
 
 	var sigma = Path.covariance.apply(null, arguments);
@@ -146,20 +172,13 @@ Path.eigensystem = function() {
 				lambda.vector[0][n] = X1;
 				lambda.vector[1][n] = X2;
 
-				var x1 = X1 * (d - b) - detA;
-				var y1 = X1 * (a - c) - detA;
+				var E1 = eigenvector(1, X1, a, b, c, d);
+				var E2 = eigenvector(2, X2, a, b, c, d);
 
-				var h1 = hypot(x1, y1);
-
-				var x2 = X2 * (d - b) - detA;
-				var y2 = X2 * (a - c) - detA;
-
-				var h2 = hypot(x2, y2);
-
-				sigma.vector[0][n] = x1 / h1;
-				sigma.vector[1][n] = y1 / h1;
-				sigma.vector[2][n] = x2 / h2;
-				sigma.vector[3][n] = y2 / h2;
+				sigma.vector[0][n] = E1[0];
+				sigma.vector[1][n] = E2[0];
+				sigma.vector[2][n] = E1[1];
+				sigma.vector[3][n] = E2[1];
 			}
 
 			break;
