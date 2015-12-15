@@ -633,6 +633,8 @@ function displayGlyph(container, path, color) {
 	svg.appendChild(element);
 
 	container.appendChild(svg);
+
+	return svg;
 }
 
 function pen_up(e) {
@@ -739,9 +741,15 @@ window.onload = function(e) {
 			var aligned_mu = Path.mean.apply(null, aligned_paths);
 			var eigen = Path.eigensystem.apply(null, aligned_paths);
 
-			displayGlyph(con, aligned_mu, "gray");
+			var ee = displayGlyph(con, aligned_mu, "gray");
 
 			Array.prototype.push.apply(state.paths, aligned_paths);
+
+			var p = aligned_mu.zero();
+
+			for(var n = 0; n < aligned_mu.length(); n++)
+				for(var m = 0; m < aligned_mu.dimensions(); m++)
+					p[m] += aligned_mu.vector[m][n];
 		}
 	};
 
