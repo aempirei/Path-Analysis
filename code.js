@@ -40,23 +40,20 @@ function initState() {
 
 var svgns = "http://www.w3.org/2000/svg";
 
-function hypot() {
-	var x = 0;
-	for(var n = 0; n < arguments.length; n++)
-		x += Math.pow(arguments[n], 2);
-	return Math.sqrt(x);
-}
-
-function evalue() {
-	var h = hypot.apply(null, arguments);
-	return Math.sqrt(1 - h * h);
-}
-
 function dot(u,v) {
 	var x = 0;
 	for(var i = 0; i < u.length; i++)
 		x += u[i] * v[i];
 	return x;
+}
+
+function hypot() {
+	return Math.sqrt(dot(arguments,arguments));
+}
+
+function evalue() {
+	var h = hypot.apply(null, arguments);
+	return Math.sqrt(1 - h * h);
 }
 
 function Path(dim) {
@@ -98,7 +95,7 @@ Path.covariance = function() {
 				var cov = 0;
 
 				for(var k = 0; k < arguments.length; k++)
-					cov += (arguments[k].vector[i][n] - mu.vector[i][n]) * (arguments[k].vector[j][n] - mu.vector[j][n]); 
+					cov += (arguments[k].vector[i][n] - mu.vector[i][n]) * (arguments[k].vector[j][n] - mu.vector[j][n]);
 
 				cov /= arguments.length;
 
@@ -234,7 +231,7 @@ Path.prototype.toString = function(type) {
 
 
 		str += this.dimensions().toString() + 'x' + this.length().toString();
-		str += ' |' + this.arcLength().toPrecision(state.precision)  + '| = ';
+		str += ' |' + this.arc_length().toPrecision(state.precision)  + '| = ';
 
 		for(var n = 0; n < this.length(); n++) {
 
@@ -254,14 +251,14 @@ Path.prototype.toString = function(type) {
 };
 
 Path.prototype.normalize = function(norm) {
-	var coef = norm / this.arcLength();
+	var coef = norm / this.arc_length();
 	for(var n = 0; n < this.length(); n++)
 		for(m = 0; m < this.dimensions(); m++)
 			this.vector[m][n] *= coef;
 	return this;
 };
 
-Path.prototype.arcLength = function() {
+Path.prototype.arc_length = function() {
 	var x = 0;
 	var args = [];
 	for(var n = 0; n < this.length(); n++) {
@@ -312,48 +309,116 @@ Path.prototype.zero = function() {
 	for(var m = 0; m < this.dimensions(); m++)
 		v.push(0);
 	return v;
-}
+};
 
-Path.prototype.step = function(n,x,r) {
+Path.prototype.unit_step = function(integer_index,fractional_index,step_size) {
 
-	if(n == this.length())
-		return { n: n, x: 0, v: this.zero() };
+	if(integer_index == this.length())
+		return {
+			n: integer_index,
+			x: 0,
+			v: this.zero()
+		};
 
-	var v = this.column(n);
-	var h = hypot.apply(null, v);
-	var dh = (1 - x) * h;
+	var vector = this.column(integer_index);
+	var vector_length = hypot.apply(null, vector);
+	var vector_length_unused = (1 - fractional_index) * vector_length;
 
-	if(r < dh) {
+	if(step_size < vector_length_unused) {
 
-		var coef = r / h;
+		var coef = step_size / vector_length;
 
-		for(var i = 0; i < v.length; i++)
-			v[i] *= coef;
+		for(var i = 0; i < vector.length; i++)
+			vector[i] *= coef;
 
-		return { n: n, x: x + coef, v: v };
+		return {
+			n: integer_index,
+			x: fractional_index + coef,
+			v: vector
+		};
 
 	}
 
-	var w = this.step(n + 1, 0, r - dh);
+	var lower = this.column(integer_index, 1 - fractional_index);
 
-	for(var i = 0; i < v.length; i++)
-		w.v[i] += (1 - x) * v[i];
+	for(var n = integer_index + 1; n < this.length(); n++) {
+
+		var upper = this.column(n);
+
+		for(var k = 0; k < this.dimensions(); k++)
+			upper[k] += lower[k];
+
+		var lower_length = hypot.apply(null, lower);
+		var upper_length = hypot.apply(null, upper);
+
+		if(lower_length <= 1 && 1 < upper_length) {
+
+			var v = this.column(n);
+
+			var coef = (hypot.apply(null,v) - dot(lower, v)) / dot(v,v);
+
+			var unit = this.column(n, coef);
+
+			for(var k = 0; k < this.dimensions(); k++)
+				unit[k] += lower[k];
+
+			return { n: n, x: coef, v: unit };
+		}
+
+		lower = upper;
+	}
+
+	return { n: this.length() - 1, x: 1, v: lower };
+};
+
+Path.prototype.step = function(integer_index,fractional_index,step_size) {
+
+	if(integer_index == this.length())
+		return {
+			n: integer_index,
+			x: 0,
+			v: this.zero()
+		};
+
+	var vector = this.column(integer_index);
+	var vector_length = hypot.apply(null, vector);
+	var vector_length_unused = (1 - fractional_index) * vector_length;
+
+	if(step_size < vector_length_unused) {
+
+		var coef = step_size / vector_length;
+
+		for(var i = 0; i < vector.length; i++)
+			vector[i] *= coef;
+
+		return {
+			n: integer_index,
+			x: fractional_index + coef,
+			v: vector
+		};
+
+	}
+
+	var w = this.step(integer_index + 1, 0, step_size - vector_length_unused);
+
+	for(var i = 0; i < vector.length; i++)
+		w.v[i] += (1 - fractional_index) * vector[i];
 
 	return w;
 };
 
-Path.prototype.resample = function(step) {
+Path.prototype.resample = function(step_size) {
 
 	var path = new Path(this.dimensions());
-	var n = 0;
-	var x = 0;
+	var integer_index = 0;
+	var fractional_index = 0;
 
-	var samples = Math.round(this.arcLength() / step);
+	var samples = Math.round(this.arc_length() / step_size);
 
-	while(n < this.length() && path.length() < samples) {
-		var w = this.step(n, x, step);
-		n = w.n;
-		x = w.x;
+	while(integer_index < this.length() && path.length() < samples) {
+		var w = this.unit_step(integer_index, fractional_index, step_size);
+		integer_index = w.n;
+		fractional_index = w.x;
 		Path.prototype.push.apply(path, w.v);
 	}
 
@@ -482,7 +547,7 @@ Path.prototype.align = function(q) {
 	while(i > 0 || j > 0) {
 
 		/****/ if(i == 0) {
-		
+
 			j--;
 
 		} else if(j == 0) {
@@ -663,7 +728,7 @@ function pen_move(e) {
 
 	if(state.active) {
 
-		if(e.type == "touchmove") { 
+		if(e.type == "touchmove") {
 			e.offsetX = e.touches[0].pageX;
 			e.offsetY = e.touches[0].pageY;
 		}
@@ -687,7 +752,7 @@ window.onload = function(e) {
 	var j = 20;
 
 	initState();
-	
+
 	setDim(dbg, state.width, state.height);
 
 	window.onresize();
