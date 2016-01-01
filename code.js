@@ -538,7 +538,6 @@ Path.prototype.align = function(q) {
 	var j = qJ;
 
 	as[i]++;
-	as[j]++;
 
 	var xy = new Path(2);
 
@@ -576,7 +575,6 @@ Path.prototype.align = function(q) {
 		}
 
 		as[i]++;
-		bs[j]++;
 
 		xy.push(i, j);
 	}
